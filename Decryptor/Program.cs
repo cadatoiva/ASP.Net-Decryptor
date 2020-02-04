@@ -7,20 +7,43 @@ namespace Decryptor
 {
 	internal static class Program
 	{
-
-
 		private static void Main(string[] args)
 		{
+			Console.Write("Is this the computer that was used to encrypt the data string? [y/n]: ");
+			var hostComputer = Console.ReadLine().StartsWith("y", StringComparison.InvariantCultureIgnoreCase);
+
 			//Application discrimination keeps keys inaccessible to other applications. Defaults to Fully Qualified application path
 			Console.Write("Enter full path for Jackett binary: ");
-			var applicationName = Console.ReadLine();
+			var applicationString = Console.ReadLine();
+
+
+			if (hostComputer)
+			{
+				var appFileInfo = new FileInfo(applicationString);
+				if (!appFileInfo.Exists)
+				{
+					Console.WriteLine($"File does not exist: {appFileInfo.FullName}");
+					Environment.Exit(1);
+				}
+
+				applicationString = appFileInfo.FullName;
+			}
+
 
 			//Tell decryptor where to look for key files
 			Console.Write("Enter the path for DataProtection Keys (should be [ConfigDir]/DataProtection): ");
-			var keyDirectory = new DirectoryInfo(Console.ReadLine());
+			var dataProtectionDir = new DirectoryInfo(Console.ReadLine());
+
+
+			if (!dataProtectionDir.Exists)
+			{
+				Console.WriteLine($"DataProtection folder does not exist: {dataProtectionDir.FullName}");
+				Environment.Exit(1);
+			}
 
 			var serviceCollection = new ServiceCollection();
-			serviceCollection.AddDataProtection().PersistKeysToFileSystem(keyDirectory).SetApplicationName(applicationName);
+			serviceCollection.AddDataProtection().PersistKeysToFileSystem(dataProtectionDir)
+				.SetApplicationName(applicationString);
 			var services = serviceCollection.BuildServiceProvider();
 
 			// create an instance of MyClass using the service provider
